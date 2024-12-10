@@ -1,5 +1,32 @@
 #!/bin/bash
 
+# Function to check if any VPN interfaces (e.g., tun0, tun1) are active
+check_vpn_active() {
+    if ip a | grep -q "tun[0-9]"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to check if any common VPN processes are running
+check_vpn_processes() {
+    # List of common VPN processes; you can add more if needed
+    vpn_processes=("openvpn" "vpnc" "wireguard" "strongswan" "anyconnect")
+    for process in "${vpn_processes[@]}"; do
+        if pgrep -x "$process" > /dev/null; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Check if VPN is active or any VPN processes are running
+if check_vpn_active || check_vpn_processes; then
+    echo "VPN is active or the system is tunneled. Please disable VPN before running this script."
+    exit 1
+fi
+
 # Get the VMware Player version
 vmware_version=$(vmplayer -v | grep -oE 'Player (16|17)\.[0-9]+\.[0-9]+' | awk '{print $2}')
 
